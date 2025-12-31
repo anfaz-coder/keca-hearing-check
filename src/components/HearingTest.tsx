@@ -82,24 +82,29 @@ const HearingTest = ({ onComplete, onBack }: HearingTestProps) => {
     const audioContext = audioContextRef.current;
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
-    const panNode = audioContext.createStereoPanner();
+    
+    // Use ChannelMergerNode for true mono output to only one ear
+    const merger = audioContext.createChannelMerger(2);
 
     oscillator.type = "sine";
     oscillator.frequency.setValueAtTime(currentFrequency.hz, audioContext.currentTime);
-
-    // Set gain based on current decibel level
-    gainNode.gain.setValueAtTime(currentDecibel.gain, audioContext.currentTime);
 
     // Smooth fade in/out to prevent clicks
     gainNode.gain.setValueAtTime(0, audioContext.currentTime);
     gainNode.gain.linearRampToValueAtTime(currentDecibel.gain, audioContext.currentTime + 0.1);
 
-    // Pan to left or right ear
-    panNode.pan.setValueAtTime(testState.ear === "left" ? -1 : 1, audioContext.currentTime);
-
+    // Connect oscillator to gain
     oscillator.connect(gainNode);
-    gainNode.connect(panNode);
-    panNode.connect(audioContext.destination);
+    
+    // Route to only the selected ear using channel merger
+    // Left ear = channel 0, Right ear = channel 1
+    if (testState.ear === "left") {
+      gainNode.connect(merger, 0, 0); // Connect to left channel only
+    } else {
+      gainNode.connect(merger, 0, 1); // Connect to right channel only
+    }
+    
+    merger.connect(audioContext.destination);
 
     oscillator.start();
     oscillatorRef.current = oscillator;
