@@ -22,27 +22,77 @@ interface ResultsProps {
 
 type HearingLevel = "normal" | "mild" | "moderate" | "severe";
 
+// Standard audiometric frequency labels
+const frequencyLabels = ["250", "500", "1K", "2K", "3K", "4K", "6K", "8K"];
+
 const Results = ({ results, leadData, onRestart }: ResultsProps) => {
   const analysis = useMemo(() => {
     const leftEarResults = results.filter((r) => r.ear === "left");
     const rightEarResults = results.filter((r) => r.ear === "right");
 
+    // Calculate Pure Tone Average (PTA) - standard uses 500, 1000, 2000 Hz
+    const calculatePTA = (earResults: TestResult[]) => {
+      const ptaFrequencies = [500, 1000, 2000];
+      const ptaResults = earResults.filter(r => ptaFrequencies.includes(r.frequency));
+      
+      if (ptaResults.length === 0) return null;
+      
+      const thresholds = ptaResults.map(r => r.threshold ?? (r.heard ? 20 : 60));
+      return thresholds.reduce((a, b) => a + b, 0) / thresholds.length;
+    };
+
+    // Calculate score based on threshold detection
     const calculateScore = (earResults: TestResult[]) => {
       const total = earResults.length;
-      const heard = earResults.filter((r) => r.heard === true).length;
-      const unsure = earResults.filter((r) => r.heard === null).length;
-      return ((heard + unsure * 0.5) / total) * 100;
+      if (total === 0) return 0;
+      
+      let score = 0;
+      earResults.forEach(r => {
+        if (r.threshold !== null) {
+          // Convert threshold to score (lower threshold = better hearing)
+          // 5dB = 100%, 40dB = 20%
+          score += Math.max(0, 100 - ((r.threshold - 5) * 2.3));
+        } else if (r.heard === true) {
+          score += 80;
+        } else if (r.heard === null) {
+          score += 50;
+        } else {
+          score += 10;
+        }
+      });
+      return score / total;
+    };
+
+    // Get threshold data for audiogram
+    const getThresholdData = (earResults: TestResult[]) => {
+      return earResults.map(r => ({
+        frequency: r.frequency,
+        threshold: r.threshold ?? (r.heard ? 20 : 60),
+        heard: r.heard,
+      }));
     };
 
     const leftScore = calculateScore(leftEarResults);
     const rightScore = calculateScore(rightEarResults);
     const overallScore = (leftScore + rightScore) / 2;
 
+    const leftPTA = calculatePTA(leftEarResults);
+    const rightPTA = calculatePTA(rightEarResults);
+
     const getLevel = (score: number): HearingLevel => {
-      if (score >= 80) return "normal";
-      if (score >= 60) return "mild";
-      if (score >= 40) return "moderate";
+      if (score >= 75) return "normal";
+      if (score >= 55) return "mild";
+      if (score >= 35) return "moderate";
       return "severe";
+    };
+
+    const getPTALevel = (pta: number | null): string => {
+      if (pta === null) return "Unknown";
+      if (pta <= 20) return "Normal";
+      if (pta <= 40) return "Mild Loss";
+      if (pta <= 55) return "Moderate Loss";
+      if (pta <= 70) return "Moderate-Severe";
+      return "Severe Loss";
     };
 
     return {
@@ -52,6 +102,12 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
       leftLevel: getLevel(leftScore),
       rightLevel: getLevel(rightScore),
       overallLevel: getLevel(overallScore),
+      leftPTA,
+      rightPTA,
+      leftPTALevel: getPTALevel(leftPTA),
+      rightPTALevel: getPTALevel(rightPTA),
+      leftThresholds: getThresholdData(leftEarResults),
+      rightThresholds: getThresholdData(rightEarResults),
     };
   }, [results]);
 
@@ -63,9 +119,9 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
       borderColor: "border-success",
       title: "Normal Hearing",
       description:
-        "Great news! Your hearing appears to be within normal range. Keep protecting your ears from loud noises.",
+        "Great news! Your hearing appears to be within normal range across all tested frequencies.",
       recommendation:
-        "Continue your current habits and consider an annual hearing check-up.",
+        "Continue protecting your ears from loud noises and consider annual check-ups.",
     },
     mild: {
       icon: AlertTriangle,
@@ -74,9 +130,9 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
       borderColor: "border-warning",
       title: "Mild Hearing Concern",
       description:
-        "Your results show some mild hearing difficulties. This is common and often manageable.",
+        "Your results show some difficulty with certain frequencies. This is common and often manageable.",
       recommendation:
-        "We recommend a professional hearing evaluation to understand your hearing better.",
+        "We recommend a professional audiometric evaluation for a detailed assessment.",
     },
     moderate: {
       icon: AlertCircle,
@@ -85,9 +141,9 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
       borderColor: "border-warning",
       title: "Moderate Hearing Concern",
       description:
-        "Your results indicate moderate hearing difficulties that may affect daily communication.",
+        "Your results indicate moderate hearing difficulties across multiple frequencies.",
       recommendation:
-        "A comprehensive hearing assessment by a KECA specialist is recommended.",
+        "A comprehensive hearing assessment by a KECA specialist is strongly recommended.",
     },
     severe: {
       icon: XCircle,
@@ -105,6 +161,105 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
   const config = levelConfig[analysis.overallLevel];
   const Icon = config.icon;
 
+  // Simple audiogram visualization
+  const renderAudiogram = () => {
+    const maxThreshold = 60;
+    const minThreshold = 0;
+    
+    return (
+      <div className="rounded-xl bg-card p-4 shadow-soft">
+        <h3 className="mb-4 text-center text-subheading text-foreground">
+          Hearing Threshold Chart
+        </h3>
+        
+        {/* Chart */}
+        <div className="relative h-48 border-l-2 border-b-2 border-border ml-8 mr-4">
+          {/* Y-axis labels (dB) */}
+          <div className="absolute -left-8 top-0 h-full flex flex-col justify-between text-body-sm text-muted-foreground">
+            <span>0</span>
+            <span>20</span>
+            <span>40</span>
+            <span>60</span>
+          </div>
+          
+          {/* Grid lines */}
+          <div className="absolute inset-0 flex flex-col justify-between">
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className="w-full border-t border-dashed border-border/50" />
+            ))}
+          </div>
+          
+          {/* Data points */}
+          <div className="absolute inset-0 flex items-end justify-around px-2">
+            {frequencyLabels.map((label, idx) => {
+              const leftResult = analysis.leftThresholds[idx];
+              const rightResult = analysis.rightThresholds[idx];
+              
+              const leftHeight = leftResult 
+                ? ((maxThreshold - leftResult.threshold) / maxThreshold) * 100 
+                : 0;
+              const rightHeight = rightResult 
+                ? ((maxThreshold - rightResult.threshold) / maxThreshold) * 100 
+                : 0;
+              
+              return (
+                <div key={label} className="flex flex-col items-center gap-1 h-full relative">
+                  {/* Left ear marker */}
+                  {leftResult && (
+                    <div 
+                      className="absolute w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow-sm"
+                      style={{ bottom: `${leftHeight}%`, transform: 'translateX(-4px)' }}
+                      title={`Left: ${leftResult.threshold}dB`}
+                    />
+                  )}
+                  {/* Right ear marker */}
+                  {rightResult && (
+                    <div 
+                      className="absolute w-3 h-3 bg-red-500 border-2 border-white shadow-sm"
+                      style={{ 
+                        bottom: `${rightHeight}%`, 
+                        transform: 'translateX(4px)',
+                        clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)'
+                      }}
+                      title={`Right: ${rightResult.threshold}dB`}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* X-axis labels */}
+          <div className="absolute -bottom-6 left-0 right-0 flex justify-around text-body-sm text-muted-foreground">
+            {frequencyLabels.map(label => (
+              <span key={label}>{label}</span>
+            ))}
+          </div>
+        </div>
+        
+        {/* Legend */}
+        <div className="mt-8 flex justify-center gap-6 text-body-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-blue-500" />
+            <span className="text-muted-foreground">Left Ear</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div 
+              className="w-3 h-3 bg-red-500"
+              style={{ clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)' }}
+            />
+            <span className="text-muted-foreground">Right Ear</span>
+          </div>
+        </div>
+        
+        {/* Axis labels */}
+        <div className="mt-4 text-center text-body-sm text-muted-foreground">
+          <p>Frequency (Hz) → | Threshold (dB HL) ↑</p>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen keca-gradient-soft">
       {/* Header */}
@@ -115,9 +270,9 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
       <main className="container pb-12">
         <div className="mx-auto max-w-md">
           {/* Result Icon */}
-          <div className="mb-8 flex justify-center">
-            <div className={`rounded-full ${config.bgColor} p-8 shadow-elevated`}>
-              <Icon className={`h-20 w-20 ${config.color}`} />
+          <div className="mb-6 flex justify-center">
+            <div className={`rounded-full ${config.bgColor} p-6 shadow-elevated`}>
+              <Icon className={`h-16 w-16 ${config.color}`} />
             </div>
           </div>
 
@@ -127,15 +282,15 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
           </h1>
 
           {/* Description */}
-          <p className="mb-8 text-center text-body-lg text-muted-foreground">
+          <p className="mb-6 text-center text-body text-muted-foreground">
             {config.description}
           </p>
 
           {/* Score Card */}
           <div className="mb-6 overflow-hidden rounded-2xl bg-card shadow-elevated">
             {/* Overall Score */}
-            <div className={`border-b-4 ${config.borderColor} p-6`}>
-              <div className="mb-2 text-center text-body-sm font-medium text-muted-foreground">
+            <div className={`border-b-4 ${config.borderColor} p-4`}>
+              <div className="mb-1 text-center text-body-sm font-medium text-muted-foreground">
                 Overall Hearing Score
               </div>
               <div className="flex items-center justify-center gap-2">
@@ -145,7 +300,7 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
               </div>
             </div>
 
-            {/* Individual Ears */}
+            {/* Individual Ears with PTA */}
             <div className="grid grid-cols-2 divide-x divide-border">
               <div className="p-4 text-center">
                 <div className="mb-1 text-body-sm text-muted-foreground">
@@ -153,6 +308,12 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
                 </div>
                 <div className="text-heading text-foreground">
                   {Math.round(analysis.leftScore)}%
+                </div>
+                <div className="mt-1 text-body-sm text-primary">
+                  PTA: {analysis.leftPTA ? `${Math.round(analysis.leftPTA)} dB` : 'N/A'}
+                </div>
+                <div className="text-body-sm text-muted-foreground">
+                  {analysis.leftPTALevel}
                 </div>
               </div>
               <div className="p-4 text-center">
@@ -162,12 +323,40 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
                 <div className="text-heading text-foreground">
                   {Math.round(analysis.rightScore)}%
                 </div>
+                <div className="mt-1 text-body-sm text-primary">
+                  PTA: {analysis.rightPTA ? `${Math.round(analysis.rightPTA)} dB` : 'N/A'}
+                </div>
+                <div className="text-body-sm text-muted-foreground">
+                  {analysis.rightPTALevel}
+                </div>
               </div>
             </div>
           </div>
 
+          {/* Audiogram */}
+          <div className="mb-6">
+            {renderAudiogram()}
+          </div>
+
+          {/* Frequencies Tested */}
+          <div className="mb-6 rounded-xl bg-card p-4 shadow-soft">
+            <h3 className="mb-3 text-center text-subheading text-foreground">
+              Frequencies Tested
+            </h3>
+            <div className="grid grid-cols-4 gap-2 text-center">
+              {["250 Hz", "500 Hz", "1 kHz", "2 kHz", "3 kHz", "4 kHz", "6 kHz", "8 kHz"].map((freq, idx) => (
+                <div key={freq} className="rounded-lg bg-secondary/50 p-2">
+                  <div className="text-body-sm font-medium text-foreground">{freq}</div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-center text-body-sm text-muted-foreground">
+              Tested at multiple decibel levels (5-40 dB)
+            </p>
+          </div>
+
           {/* Recommendation */}
-          <div className="mb-8 rounded-2xl bg-primary-light p-6">
+          <div className="mb-6 rounded-2xl bg-primary-light p-4">
             <h2 className="mb-2 text-subheading text-foreground">
               KECA Recommendation
             </h2>
@@ -177,7 +366,7 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
           </div>
 
           {/* CTAs */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <Button variant="cta" size="xl" className="w-full">
               <Calendar className="h-5 w-5" />
               Book Free Consultation
@@ -201,7 +390,7 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
           </div>
 
           {/* Retake Test */}
-          <div className="mt-8 text-center">
+          <div className="mt-6 text-center">
             <button
               onClick={onRestart}
               className="text-body-sm text-primary underline-offset-4 hover:underline"
@@ -216,6 +405,9 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
       <footer className="container pb-8 text-center">
         <p className="text-body-sm text-muted-foreground">
           Results sent to {leadData.email}
+        </p>
+        <p className="mt-1 text-body-sm text-muted-foreground">
+          This screening is not a diagnostic test. Please consult an audiologist for clinical evaluation.
         </p>
       </footer>
     </div>
