@@ -113,8 +113,8 @@ const Index = () => {
       {currentScreen === "lead-capture" && (
         <LeadCapture onSubmit={handleLeadSubmit} />
       )}
-      {currentScreen === "results" && leadData && (
-        <Results results={testResults} leadData={leadData} onRestart={handleRestart} />
+      {currentScreen === "results" && leadData && userProfile && (
+        <Results results={testResults} leadData={leadData} userProfile={userProfile} onRestart={handleRestart} />
       )}
     </>
   );
