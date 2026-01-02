@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import KECALogo from "./KECALogo";
 import { TestResult } from "./HearingTest";
 import { LeadData } from "./LeadCapture";
+import { UserProfile } from "@/pages/Index";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -12,11 +13,13 @@ import {
   Calendar,
   Download,
   Share2,
+  User,
 } from "lucide-react";
 
 interface ResultsProps {
   results: TestResult[];
   leadData: LeadData;
+  userProfile: UserProfile;
   onRestart: () => void;
 }
 
@@ -25,7 +28,10 @@ type HearingLevel = "normal" | "mild" | "moderate" | "severe";
 // Standard audiometric frequency labels
 const frequencyLabels = ["250", "500", "1K", "2K", "3K", "4K", "6K", "8K"];
 
-const Results = ({ results, leadData, onRestart }: ResultsProps) => {
+const Results = ({ results, leadData, userProfile, onRestart }: ResultsProps) => {
+  const currentYear = new Date().getFullYear();
+  const age = currentYear - userProfile.birthYear;
+  const gender = userProfile.gender;
   const analysis = useMemo(() => {
     const leftEarResults = results.filter((r) => r.ear === "left");
     const rightEarResults = results.filter((r) => r.ear === "right");
@@ -111,6 +117,57 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
     };
   }, [results]);
 
+  // Age-related hearing insights
+  const getAgeInsight = () => {
+    if (age < 40) {
+      return "At your age, hearing loss is less common but can occur due to noise exposure or other factors.";
+    } else if (age < 55) {
+      return "Some age-related hearing changes may begin around this stage of life.";
+    } else if (age < 65) {
+      return "Gradual hearing changes are common at this age. Regular monitoring is recommended.";
+    } else {
+      return "Age-related hearing loss (presbycusis) affects many adults in this age group.";
+    }
+  };
+
+  // Gender-specific insights
+  const getGenderInsight = () => {
+    if (gender === "male") {
+      return "Men are statistically more likely to experience hearing loss, often due to occupational noise exposure.";
+    } else {
+      return "Women may experience different patterns of hearing loss, sometimes affected by hormonal changes.";
+    }
+  };
+
+  // Personalized recommendation based on age and hearing level
+  const getPersonalizedRecommendation = (level: HearingLevel) => {
+    const baseRecommendations = {
+      normal: {
+        young: "Your hearing is excellent! Protect it by limiting exposure to loud sounds and using ear protection in noisy environments.",
+        middle: "Great hearing for your age! Continue with annual check-ups to monitor any changes.",
+        senior: "Your hearing is well-preserved. Continue protecting your ears and schedule regular audiological assessments.",
+      },
+      mild: {
+        young: "Some mild concerns detected. This is unusual at your age—we recommend a professional evaluation to identify any underlying causes.",
+        middle: "Mild hearing changes are not uncommon at your age. A professional assessment can help determine if intervention would benefit you.",
+        senior: "Some mild hearing changes detected, which is common at your age. Consider hearing aids or assistive devices to enhance your quality of life.",
+      },
+      moderate: {
+        young: "Moderate hearing concerns at your age warrant prompt professional attention to prevent further decline.",
+        middle: "Your results suggest moderate hearing difficulties. Early intervention with hearing aids could significantly improve your daily life.",
+        senior: "Moderate hearing loss is manageable with the right support. KECA hearing aids are designed specifically for adults with similar profiles.",
+      },
+      severe: {
+        young: "These results require immediate professional attention. Early intervention is crucial for maintaining communication abilities.",
+        middle: "Significant hearing concerns detected. Please schedule a priority consultation—modern hearing solutions can make a tremendous difference.",
+        senior: "Professional hearing care is strongly recommended. Many people with similar results experience significant improvement with hearing aids.",
+      },
+    };
+
+    const ageCategory = age < 45 ? "young" : age < 60 ? "middle" : "senior";
+    return baseRecommendations[level][ageCategory];
+  };
+
   const levelConfig = {
     normal: {
       icon: CheckCircle2,
@@ -120,8 +177,6 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
       title: "Normal Hearing",
       description:
         "Great news! Your hearing appears to be within normal range across all tested frequencies.",
-      recommendation:
-        "Continue protecting your ears from loud noises and consider annual check-ups.",
     },
     mild: {
       icon: AlertTriangle,
@@ -131,8 +186,6 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
       title: "Mild Hearing Concern",
       description:
         "Your results show some difficulty with certain frequencies. This is common and often manageable.",
-      recommendation:
-        "We recommend a professional audiometric evaluation for a detailed assessment.",
     },
     moderate: {
       icon: AlertCircle,
@@ -142,8 +195,6 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
       title: "Moderate Hearing Concern",
       description:
         "Your results indicate moderate hearing difficulties across multiple frequencies.",
-      recommendation:
-        "A comprehensive hearing assessment by a KECA specialist is strongly recommended.",
     },
     severe: {
       icon: XCircle,
@@ -153,8 +204,6 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
       title: "Significant Hearing Concern",
       description:
         "Your results suggest significant hearing difficulties. Early intervention can make a big difference.",
-      recommendation:
-        "Please schedule a priority consultation with a KECA hearing specialist.",
     },
   };
 
@@ -355,13 +404,35 @@ const Results = ({ results, leadData, onRestart }: ResultsProps) => {
             </p>
           </div>
 
+          {/* Personal Profile */}
+          <div className="mb-6 rounded-xl bg-card p-4 shadow-soft">
+            <div className="flex items-center gap-2 mb-3">
+              <User className="h-5 w-5 text-primary" />
+              <h3 className="text-subheading text-foreground">Your Profile</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="rounded-lg bg-secondary/50 p-3 text-center">
+                <div className="text-body-sm text-muted-foreground">Age</div>
+                <div className="text-heading text-foreground">{age}</div>
+              </div>
+              <div className="rounded-lg bg-secondary/50 p-3 text-center">
+                <div className="text-body-sm text-muted-foreground">Gender</div>
+                <div className="text-heading text-foreground capitalize">{gender}</div>
+              </div>
+            </div>
+            <div className="space-y-2 text-body-sm text-muted-foreground">
+              <p>• {getAgeInsight()}</p>
+              <p>• {getGenderInsight()}</p>
+            </div>
+          </div>
+
           {/* Recommendation */}
           <div className="mb-6 rounded-2xl bg-primary-light p-4">
             <h2 className="mb-2 text-subheading text-foreground">
-              KECA Recommendation
+              KECA Recommendation for You
             </h2>
             <p className="text-body text-muted-foreground">
-              {config.recommendation}
+              {getPersonalizedRecommendation(analysis.overallLevel)}
             </p>
           </div>
 
