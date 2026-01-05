@@ -18,22 +18,23 @@ export interface TestResult {
   threshold: number | null; // The lowest dB at which the tone was heard
 }
 
-// Audiologist-grade frequency range (Hz)
-// 4 key audiometric frequencies spanning low to high range
+// Audiometric frequencies for hearing test
+// 4 key frequencies used for Pure Tone Average (PTA) calculation
 const frequencies = [
-  { hz: 250, label: "250 Hz", category: "Low", description: "Low bass frequency" },
+  { hz: 500, label: "500 Hz", category: "Low", description: "Low frequency tone" },
   { hz: 1000, label: "1000 Hz", category: "Mid", description: "Mid-range speech frequency" },
+  { hz: 2000, label: "2000 Hz", category: "Mid-High", description: "Speech clarity frequency" },
   { hz: 4000, label: "4000 Hz", category: "High", description: "High frequency tone" },
-  { hz: 8000, label: "8000 Hz", category: "Ultra-High", description: "Ultra-high frequency" },
 ];
 
-// 4 Decibel levels for threshold testing (2-20 dB HL)
-// Starting from louder to softer for efficient threshold finding
+// 5 Decibel levels for threshold testing (5-40 dB HL)
+// Starting from softer to louder for efficient threshold finding
 const decibelLevels = [
-  { db: 20, gain: 0.05, label: "20 dB" },
-  { db: 14, gain: 0.025, label: "14 dB" },
-  { db: 8, gain: 0.012, label: "8 dB" },
-  { db: 2, gain: 0.005, label: "2 dB" },
+  { db: 5, gain: 0.003, label: "5 dB" },
+  { db: 10, gain: 0.006, label: "10 dB" },
+  { db: 20, gain: 0.02, label: "20 dB" },
+  { db: 30, gain: 0.06, label: "30 dB" },
+  { db: 40, gain: 0.2, label: "40 dB" },
 ];
 
 interface TestState {
