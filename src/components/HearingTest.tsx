@@ -19,21 +19,23 @@ export interface TestResult {
 }
 
 // Audiologist-grade frequency range (Hz)
-// 4 key audiometric frequencies spanning low to high range
+// Standard audiometric frequencies for hearing assessment
 const frequencies = [
-  { hz: 250, label: "250 Hz", category: "Low", description: "Low bass frequency" },
+  { hz: 500, label: "500 Hz", category: "Low", description: "Low frequency tone" },
   { hz: 1000, label: "1000 Hz", category: "Mid", description: "Mid-range speech frequency" },
+  { hz: 2000, label: "2000 Hz", category: "Mid", description: "Speech frequency range" },
   { hz: 4000, label: "4000 Hz", category: "High", description: "High frequency tone" },
-  { hz: 8000, label: "8000 Hz", category: "Ultra-High", description: "Ultra-high frequency" },
+  { hz: 6000, label: "6000 Hz", category: "High", description: "Very high frequency" },
 ];
 
-// 4 Decibel levels for threshold testing (2-20 dB HL)
+// Decibel levels for threshold testing (dB HL equivalents)
 // Starting from louder to softer for efficient threshold finding
 const decibelLevels = [
+  { db: 40, gain: 0.25, label: "40 dB" },
+  { db: 30, gain: 0.12, label: "30 dB" },
   { db: 20, gain: 0.05, label: "20 dB" },
-  { db: 14, gain: 0.025, label: "14 dB" },
-  { db: 8, gain: 0.012, label: "8 dB" },
-  { db: 2, gain: 0.005, label: "2 dB" },
+  { db: 10, gain: 0.02, label: "10 dB" },
+  { db: 5, gain: 0.008, label: "5 dB" },
 ];
 
 interface TestState {
