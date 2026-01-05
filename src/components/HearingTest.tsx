@@ -28,7 +28,7 @@ const frequencies = [
 ];
 
 // 5 Decibel levels for threshold testing (5-40 dB HL)
-// Starting from softer to louder for efficient threshold finding
+// Ordered from softest to loudest for Hughson-Westlake procedure
 const decibelLevels = [
   { db: 5, gain: 0.003, label: "5 dB" },
   { db: 10, gain: 0.006, label: "10 dB" },
@@ -36,6 +36,12 @@ const decibelLevels = [
   { db: 30, gain: 0.06, label: "30 dB" },
   { db: 40, gain: 0.2, label: "40 dB" },
 ];
+
+// Starting index for Hughson-Westlake: 20 dB (index 2)
+const STARTING_DB_INDEX = 2;
+
+// Randomize delay between 800-1600ms to prevent guessing
+const getRandomDelay = () => Math.floor(Math.random() * 800) + 800;
 
 interface TestState {
   frequencyIndex: number;
@@ -48,7 +54,7 @@ interface TestState {
 const HearingTest = ({ onComplete, onBack }: HearingTestProps) => {
   const [testState, setTestState] = useState<TestState>({
     frequencyIndex: 0,
-    decibelIndex: 0,
+    decibelIndex: STARTING_DB_INDEX, // Start at 20 dB per Hughson-Westlake
     ear: "left",
     thresholdFound: false,
     currentThreshold: null,
@@ -136,44 +142,44 @@ const HearingTest = ({ onComplete, onBack }: HearingTestProps) => {
   const handleResponse = (heard: boolean | null) => {
     setShowButtons(false);
 
-    // Threshold detection logic using modified Hughson-Westlake procedure
+    // Modified Hughson-Westlake ascending technique:
+    // - Start at 20 dB
+    // - If heard: decrease intensity (go to softer level)
+    // - If not heard or not sure: increase intensity (go to louder level)
+    
     if (heard === true) {
-      // User heard the tone - try a lower (softer) level
-      if (testState.decibelIndex < decibelLevels.length - 1) {
-        // Go to next lower dB level
+      // User heard the tone - DECREASE intensity (try softer level)
+      if (testState.decibelIndex > 0) {
+        // Go to softer dB level (lower index = softer)
         setTestState(prev => ({
           ...prev,
-          decibelIndex: prev.decibelIndex + 1,
+          decibelIndex: prev.decibelIndex - 1,
           currentThreshold: currentDecibel.db,
         }));
         setTestPhase("descending");
       } else {
-        // Already at lowest level and heard - excellent hearing at this frequency
-        const result = recordResult(true, decibelLevels[decibelLevels.length - 1].db);
-        moveToNextFrequency(result);
-      }
-    } else if (heard === false) {
-      // User didn't hear the tone
-      if (testPhase === "descending" && testState.currentThreshold !== null) {
-        // We were going down and now they can't hear - threshold found
-        const result = recordResult(true, testState.currentThreshold);
-        moveToNextFrequency(result);
-      } else if (testState.decibelIndex > 0) {
-        // Go back up to a louder level
-        setTestState(prev => ({
-          ...prev,
-          decibelIndex: Math.max(0, prev.decibelIndex - 1),
-        }));
-        setTestPhase("ascending");
-      } else {
-        // At loudest level and still can't hear
-        const result = recordResult(false, null);
+        // Already at softest level (5 dB) and heard - excellent hearing
+        const result = recordResult(true, decibelLevels[0].db);
         moveToNextFrequency(result);
       }
     } else {
-      // "Not sure" - treat as borderline, try once more at same level or move on
-      const result = recordResult(null, testState.currentThreshold);
-      moveToNextFrequency(result);
+      // User didn't hear or not sure - INCREASE intensity (try louder level)
+      if (testPhase === "descending" && testState.currentThreshold !== null) {
+        // We were descending and now they can't hear - threshold is the last heard level
+        const result = recordResult(true, testState.currentThreshold);
+        moveToNextFrequency(result);
+      } else if (testState.decibelIndex < decibelLevels.length - 1) {
+        // Go to louder dB level (higher index = louder)
+        setTestState(prev => ({
+          ...prev,
+          decibelIndex: prev.decibelIndex + 1,
+        }));
+        setTestPhase("ascending");
+      } else {
+        // At loudest level (40 dB) and still can't hear
+        const result = recordResult(false, null);
+        moveToNextFrequency(result);
+      }
     }
   };
 
@@ -181,14 +187,14 @@ const HearingTest = ({ onComplete, onBack }: HearingTestProps) => {
     const newResults = [...results, result];
     setResults(newResults);
 
-    // Reset for next frequency
+    // Reset for next frequency - start at 20 dB per Hughson-Westlake
     setTestPhase("initial");
 
     if (testState.frequencyIndex < frequencies.length - 1) {
       // Next frequency, same ear
       setTestState(prev => ({
         frequencyIndex: prev.frequencyIndex + 1,
-        decibelIndex: 0,
+        decibelIndex: STARTING_DB_INDEX,
         ear: prev.ear,
         thresholdFound: false,
         currentThreshold: null,
@@ -197,7 +203,7 @@ const HearingTest = ({ onComplete, onBack }: HearingTestProps) => {
       // Switch to right ear
       setTestState({
         frequencyIndex: 0,
-        decibelIndex: 0,
+        decibelIndex: STARTING_DB_INDEX,
         ear: "right",
         thresholdFound: false,
         currentThreshold: null,
@@ -209,11 +215,12 @@ const HearingTest = ({ onComplete, onBack }: HearingTestProps) => {
   };
 
   useEffect(() => {
-    // Auto-play the tone when ready
+    // Auto-play the tone when ready with randomized delay to prevent guessing
     if (!showButtons && !isPlaying) {
+      const randomDelay = getRandomDelay();
       const timer = setTimeout(() => {
         playTone();
-      }, 1200);
+      }, randomDelay);
       return () => clearTimeout(timer);
     }
   }, [testState.frequencyIndex, testState.decibelIndex, testState.ear, showButtons, isPlaying, playTone]);
