@@ -93,9 +93,9 @@ export default {
         "keca": "var(--keca-shadow)",
         "keca-lg": "var(--keca-shadow-lg)",
         "keca-glow": "var(--keca-glow)",
-        "soft": "0 2px 8px -2px hsl(210 25% 50% / 0.1)",
-        "medium": "0 4px 16px -4px hsl(210 25% 50% / 0.15)",
-        "elevated": "0 8px 30px -8px hsl(210 25% 50% / 0.2)",
+        "soft": "0 2px 8px -2px hsl(270 20% 50% / 0.1)",
+        "medium": "0 4px 16px -4px hsl(270 20% 50% / 0.15)",
+        "elevated": "0 8px 30px -8px hsl(270 20% 50% / 0.2)",
       },
       keyframes: {
         "accordion-down": {

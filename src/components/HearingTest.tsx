@@ -15,11 +15,9 @@ export interface TestResult {
   decibel: number;
   ear: "left" | "right";
   heard: boolean | null;
-  threshold: number | null; // The lowest dB at which the tone was heard
+  threshold: number | null;
 }
 
-// Audiometric frequencies for hearing test
-// 4 key frequencies used for Pure Tone Average (PTA) calculation
 const frequencies = [
   { hz: 500, label: "500 Hz", category: "Low", description: "Low frequency tone" },
   { hz: 1000, label: "1000 Hz", category: "Mid", description: "Mid-range speech frequency" },
@@ -27,8 +25,6 @@ const frequencies = [
   { hz: 4000, label: "4000 Hz", category: "High", description: "High frequency tone" },
 ];
 
-// 5 Decibel levels for threshold testing (5-40 dB HL)
-// Ordered from softest to loudest for Hughson-Westlake procedure
 const decibelLevels = [
   { db: 5, gain: 0.003, label: "5 dB" },
   { db: 10, gain: 0.006, label: "10 dB" },
@@ -37,10 +33,7 @@ const decibelLevels = [
   { db: 40, gain: 0.2, label: "40 dB" },
 ];
 
-// Starting index for Hughson-Westlake: 20 dB (index 2)
 const STARTING_DB_INDEX = 2;
-
-// Randomize delay between 800-1600ms to prevent guessing
 const getRandomDelay = () => Math.floor(Math.random() * 800) + 800;
 
 interface TestState {
@@ -54,7 +47,7 @@ interface TestState {
 const HearingTest = ({ onComplete, onBack }: HearingTestProps) => {
   const [testState, setTestState] = useState<TestState>({
     frequencyIndex: 0,
-    decibelIndex: STARTING_DB_INDEX, // Start at 20 dB per Hughson-Westlake
+    decibelIndex: STARTING_DB_INDEX,
     ear: "left",
     thresholdFound: false,
     currentThreshold: null,
@@ -68,11 +61,9 @@ const HearingTest = ({ onComplete, onBack }: HearingTestProps) => {
   const gainNodeRef = useRef<GainNode | null>(null);
 
   const totalFrequencies = frequencies.length;
-  const totalSteps = totalFrequencies * 2; // Both ears
+  const totalSteps = totalFrequencies * 2;
   const currentFrequency = frequencies[testState.frequencyIndex];
   const currentDecibel = decibelLevels[testState.decibelIndex];
-  
-  // Calculate progress based on completed frequencies (not individual dB tests)
   const completedTests = testState.frequencyIndex + (testState.ear === "right" ? totalFrequencies : 0);
   const progressStep = completedTests + 1;
 
@@ -88,15 +79,8 @@ const HearingTest = ({ onComplete, onBack }: HearingTestProps) => {
 
     oscillator.type = "sine";
     oscillator.frequency.setValueAtTime(currentFrequency.hz, audioContext.currentTime);
-
-    // Set gain based on current decibel level
-    gainNode.gain.setValueAtTime(currentDecibel.gain, audioContext.currentTime);
-
-    // Smooth fade in/out to prevent clicks
     gainNode.gain.setValueAtTime(0, audioContext.currentTime);
     gainNode.gain.linearRampToValueAtTime(currentDecibel.gain, audioContext.currentTime + 0.1);
-
-    // Pan to left or right ear
     panNode.pan.setValueAtTime(testState.ear === "left" ? -1 : 1, audioContext.currentTime);
 
     oscillator.connect(gainNode);
@@ -108,7 +92,6 @@ const HearingTest = ({ onComplete, onBack }: HearingTestProps) => {
     gainNodeRef.current = gainNode;
     setIsPlaying(true);
 
-    // Stop after 2 seconds with fade out
     setTimeout(() => {
       if (gainNodeRef.current && oscillatorRef.current) {
         const ctx = audioContextRef.current;
@@ -128,70 +111,22 @@ const HearingTest = ({ onComplete, onBack }: HearingTestProps) => {
   }, [currentFrequency.hz, currentDecibel.gain, testState.ear]);
 
   const recordResult = useCallback((heard: boolean | null, threshold: number | null) => {
-    const result: TestResult = {
+    return {
       frequency: currentFrequency.hz,
       frequencyLabel: currentFrequency.label,
       decibel: currentDecibel.db,
       ear: testState.ear,
       heard,
       threshold,
-    };
-    return result;
+    } as TestResult;
   }, [currentFrequency, currentDecibel, testState.ear]);
 
-  const handleResponse = (heard: boolean | null) => {
-    setShowButtons(false);
-
-    // Modified Hughson-Westlake ascending technique:
-    // - Start at 20 dB
-    // - If heard: decrease intensity (go to softer level)
-    // - If not heard or not sure: increase intensity (go to louder level)
-    
-    if (heard === true) {
-      // User heard the tone - DECREASE intensity (try softer level)
-      if (testState.decibelIndex > 0) {
-        // Go to softer dB level (lower index = softer)
-        setTestState(prev => ({
-          ...prev,
-          decibelIndex: prev.decibelIndex - 1,
-          currentThreshold: currentDecibel.db,
-        }));
-        setTestPhase("descending");
-      } else {
-        // Already at softest level (5 dB) and heard - excellent hearing
-        const result = recordResult(true, decibelLevels[0].db);
-        moveToNextFrequency(result);
-      }
-    } else {
-      // User didn't hear or not sure - INCREASE intensity (try louder level)
-      if (testPhase === "descending" && testState.currentThreshold !== null) {
-        // We were descending and now they can't hear - threshold is the last heard level
-        const result = recordResult(true, testState.currentThreshold);
-        moveToNextFrequency(result);
-      } else if (testState.decibelIndex < decibelLevels.length - 1) {
-        // Go to louder dB level (higher index = louder)
-        setTestState(prev => ({
-          ...prev,
-          decibelIndex: prev.decibelIndex + 1,
-        }));
-        setTestPhase("ascending");
-      } else {
-        // At loudest level (40 dB) and still can't hear
-        const result = recordResult(false, null);
-        moveToNextFrequency(result);
-      }
-    }
-  };
-
-  const moveToNextFrequency = (result: TestResult) => {
+  const moveToNextFrequency = useCallback((result: TestResult) => {
     const newResults = [...results, result];
     setResults(newResults);
-
-    // Reset for next frequency - start at 20 dB per Hughson-Westlake
     setTestPhase("initial");
 
     if (testState.frequencyIndex < frequencies.length - 1) {
-      // Next frequency, same ear
       setTestState(prev => ({
         frequencyIndex: prev.frequencyIndex + 1,
         decibelIndex: STARTING_DB_INDEX,
@@ -200,7 +135,6 @@ const HearingTest = ({ onComplete, onBack }: HearingTestProps) => {
         currentThreshold: null,
       }));
     } else if (testState.ear === "left") {
-      // Switch to right ear
       setTestState({
         frequencyIndex: 0,
         decibelIndex: STARTING_DB_INDEX,
@@ -209,13 +143,43 @@ const HearingTest = ({ onComplete, onBack }: HearingTestProps) => {
         currentThreshold: null,
       });
     } else {
-      // Test complete
       onComplete(newResults);
+    }
+  }, [results, testState.frequencyIndex, testState.ear, onComplete]);
+
+  const handleResponse = (heard: boolean | null) => {
+    setShowButtons(false);
+
+    if (heard === true) {
+      if (testState.decibelIndex > 0) {
+        setTestState(prev => ({
+          ...prev,
+          decibelIndex: prev.decibelIndex - 1,
+          currentThreshold: currentDecibel.db,
+        }));
+        setTestPhase("descending");
+      } else {
+        const result = recordResult(true, decibelLevels[0].db);
+        moveToNextFrequency(result);
+      }
+    } else {
+      if (testPhase === "descending" && testState.currentThreshold !== null) {
+        const result = recordResult(true, testState.currentThreshold);
+        moveToNextFrequency(result);
+      } else if (testState.decibelIndex < decibelLevels.length - 1) {
+        setTestState(prev => ({
+          ...prev,
+          decibelIndex: prev.decibelIndex + 1,
+        }));
+        setTestPhase("ascending");
+      } else {
+        const result = recordResult(false, null);
+        moveToNextFrequency(result);
+      }
     }
   };
 
   useEffect(() => {
-    // Auto-play the tone when ready with randomized delay to prevent guessing
     if (!showButtons && !isPlaying) {
       const randomDelay = getRandomDelay();
       const timer = setTimeout(() => {
@@ -225,59 +189,54 @@ const HearingTest = ({ onComplete, onBack }: HearingTestProps) => {
     }
   }, [testState.frequencyIndex, testState.decibelIndex, testState.ear, showButtons, isPlaying, playTone]);
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "Low":
-        return "bg-blue-500";
-      case "Mid":
-        return "bg-green-500";
-      case "Mid-High":
-        return "bg-yellow-500";
-      case "High":
-        return "bg-orange-500";
-      case "Ultra-High":
-        return "bg-red-500";
-      default:
-        return "bg-primary";
-    }
-  };
-
   return (
-    <div className="min-h-screen keca-gradient-soft">
-      {/* Header */}
-      <header className="container flex items-center justify-center py-6">
-        <KECALogo size="md" />
+    <div className="min-h-screen keca-gradient-soft flex flex-col">
+      {/* Compact Header */}
+      <header className="px-4 py-3 flex items-center justify-between">
+        <button
+          onClick={!isPlaying && !showButtons ? onBack : undefined}
+          className={`p-2 -ml-2 transition-colors ${
+            !isPlaying && !showButtons
+              ? "text-muted-foreground hover:text-foreground"
+              : "text-transparent pointer-events-none"
+          }`}
+          aria-label="Cancel test"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+        </button>
+        <KECALogo size="sm" />
+        <div className="w-8" />
       </header>
 
-      <main className="container pb-12">
-        <div className="mx-auto max-w-md">
+      {/* Main Content - scrollable area */}
+      <main className="flex-1 flex flex-col px-5 pb-4 overflow-y-auto">
+        <div className="mx-auto w-full max-w-md flex-1 flex flex-col">
           {/* Progress */}
-          <div className="mb-6">
+          <div className="mb-4">
             <ProgressIndicator currentStep={progressStep + 1} totalSteps={totalSteps + 2} />
-            <div className="mt-2 text-center text-body-sm text-muted-foreground">
-              Testing {totalFrequencies} frequencies per ear
-            </div>
           </div>
 
           {/* Ear Indicator */}
           <div className="mb-4 flex justify-center">
-            <div className="flex items-center gap-4 rounded-full bg-card px-6 py-3 shadow-soft">
+            <div className="flex items-center gap-3 rounded-full bg-card px-5 py-2.5 shadow-soft">
               <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-body-sm font-bold ${
+                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
                   testState.ear === "left"
-                    ? "keca-gradient text-primary-foreground"
+                    ? "keca-gradient text-primary-foreground scale-110"
                     : "bg-secondary text-muted-foreground"
                 }`}
               >
                 L
               </div>
-              <span className="text-body font-medium text-foreground">
+              <span className="text-sm font-semibold text-foreground">
                 {testState.ear === "left" ? "Left Ear" : "Right Ear"}
               </span>
               <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-body-sm font-bold ${
+                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
                   testState.ear === "right"
-                    ? "keca-gradient text-primary-foreground"
+                    ? "keca-gradient text-primary-foreground scale-110"
                     : "bg-secondary text-muted-foreground"
                 }`}
               >
@@ -286,119 +245,93 @@ const HearingTest = ({ onComplete, onBack }: HearingTestProps) => {
             </div>
           </div>
 
-          {/* Frequency & Decibel Info */}
-          <div className="mb-4 flex justify-center gap-2">
-            <span className={`rounded-full px-3 py-1 text-body-sm font-medium text-white ${getCategoryColor(currentFrequency.category)}`}>
-              {currentFrequency.category}
-            </span>
-            <span className="rounded-full bg-muted px-3 py-1 text-body-sm font-medium text-muted-foreground">
-              {currentDecibel.label}
-            </span>
-          </div>
-
-          {/* Sound Animation */}
-          <div className="mb-6 flex justify-center">
-            <div className="relative">
+          {/* Sound Animation - central focus */}
+          <div className="flex-1 flex flex-col items-center justify-center min-h-[200px]">
+            <div className="relative mb-6">
               {isPlaying && (
                 <>
                   <div className="absolute inset-0 animate-ripple rounded-full bg-primary/20" />
-                  <div
-                    className="absolute inset-0 animate-ripple rounded-full bg-primary/20"
-                    style={{ animationDelay: "0.5s" }}
-                  />
+                  <div className="absolute inset-0 animate-ripple rounded-full bg-primary/20" style={{ animationDelay: "0.5s" }} />
                 </>
               )}
-              <div
-                className={`relative rounded-full bg-card p-8 shadow-elevated transition-all duration-300 ${
-                  isPlaying ? "keca-glow" : ""
-                }`}
-              >
-                <Volume2
-                  className={`h-16 w-16 transition-colors duration-300 ${
-                    isPlaying ? "text-primary animate-pulse-soft" : "text-muted-foreground"
-                  }`}
-                />
+              <div className={`relative rounded-full bg-card p-7 shadow-elevated transition-all duration-300 ${isPlaying ? "keca-glow" : ""}`}>
+                <Volume2 className={`h-14 w-14 transition-colors duration-300 ${isPlaying ? "text-primary animate-pulse-soft" : "text-muted-foreground"}`} />
               </div>
             </div>
-          </div>
 
-          {/* Frequency Info */}
-          <div className="mb-6 text-center">
-            <h1 className="mb-1 text-heading text-foreground">
-              {currentFrequency.label}
-            </h1>
-            <p className="mb-2 text-body text-muted-foreground">
-              {currentFrequency.description}
-            </p>
-            <p className="text-body-sm text-primary font-medium">
-              {isPlaying
-                ? "Listen carefully..."
-                : showButtons
-                ? "Did you hear the tone?"
-                : "Preparing next tone..."}
-            </p>
-          </div>
+            {/* Frequency Info */}
+            <div className="text-center">
+              <h1 className="mb-1 text-xl font-bold text-foreground">
+                {currentFrequency.label}
+              </h1>
+              <p className="mb-1 text-sm text-muted-foreground">
+                {currentFrequency.description}
+              </p>
+              <p className="text-sm font-medium text-primary">
+                {isPlaying
+                  ? "Listen carefully..."
+                  : showButtons
+                  ? "Did you hear the tone?"
+                  : "Preparing next tone..."}
+              </p>
+            </div>
 
-          {/* Response Buttons */}
-          {showButtons && (
-            <div className="animate-scale-in space-y-3">
-              <Button
-                variant="success"
-                size="lg"
-                onClick={() => handleResponse(true)}
-                className="w-full"
-              >
-                <Check className="h-5 w-5" />
-                Yes, I hear it
-              </Button>
+            {/* Frequency Progress Dots */}
+            <div className="mt-4 flex justify-center gap-2">
+              {frequencies.map((freq, idx) => (
+                <div
+                  key={freq.hz}
+                  className={`h-2.5 w-2.5 rounded-full transition-all ${
+                    idx < testState.frequencyIndex
+                      ? "bg-primary"
+                      : idx === testState.frequencyIndex
+                      ? "bg-primary scale-125 ring-2 ring-primary/30"
+                      : "bg-muted"
+                  }`}
+                  title={freq.label}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Sticky Bottom Response Buttons */}
+      {showButtons && (
+        <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border/50 px-5 py-4 safe-bottom animate-slide-up">
+          <div className="mx-auto max-w-md space-y-2.5">
+            <Button
+              variant="success"
+              size="lg"
+              onClick={() => handleResponse(true)}
+              className="w-full h-14 text-base"
+            >
+              <Check className="h-5 w-5" />
+              Yes, I heard it
+            </Button>
+            <div className="grid grid-cols-2 gap-2.5">
               <Button
                 variant="destructive"
                 size="lg"
                 onClick={() => handleResponse(false)}
-                className="w-full"
+                className="w-full h-12"
               >
                 <X className="h-5 w-5" />
-                No, I don't
+                No
               </Button>
               <Button
                 variant="outline"
                 size="lg"
                 onClick={() => handleResponse(null)}
-                className="w-full"
+                className="w-full h-12"
               >
                 <HelpCircle className="h-5 w-5" />
                 Not sure
               </Button>
             </div>
-          )}
-
-          {/* Frequency Progress Dots */}
-          <div className="mt-8 flex justify-center gap-1.5">
-            {frequencies.map((freq, idx) => (
-              <div
-                key={freq.hz}
-                className={`h-2 w-2 rounded-full transition-all ${
-                  idx < testState.frequencyIndex
-                    ? "bg-primary"
-                    : idx === testState.frequencyIndex
-                    ? "bg-primary scale-125"
-                    : "bg-muted"
-                }`}
-                title={freq.label}
-              />
-            ))}
           </div>
-
-          {/* Back Button */}
-          {!isPlaying && !showButtons && (
-            <div className="mt-6">
-              <Button variant="ghost" onClick={onBack} className="w-full">
-                Cancel Test
-              </Button>
-            </div>
-          )}
         </div>
-      </main>
+      )}
     </div>
   );
 };

@@ -6,118 +6,118 @@
 
 @layer base {
   :root {
-    /* KECA Brand Colors - Medical Blue Theme */
-    --background: 210 50% 98%;
-    --foreground: 215 25% 20%;
+    /* KECA Brand Colors - Purple Theme #9E64D8 */
+    --background: 270 30% 98%;
+    --foreground: 270 20% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 20%;
+    --card-foreground: 270 20% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 20%;
+    --popover-foreground: 270 20% 15%;
 
-    /* Primary - Trust Blue */
-    --primary: 210 85% 45%;
+    /* Primary - #9E64D8 → HSL(270, 58%, 62%) */
+    --primary: 270 58% 62%;
     --primary-foreground: 0 0% 100%;
-    --primary-light: 210 85% 95%;
-    --primary-dark: 210 85% 35%;
+    --primary-light: 270 50% 95%;
+    --primary-dark: 270 58% 45%;
 
-    /* Secondary - Soft Gray Blue */
-    --secondary: 210 30% 95%;
-    --secondary-foreground: 215 25% 30%;
+    /* Secondary - Soft Purple Gray */
+    --secondary: 270 20% 95%;
+    --secondary-foreground: 270 20% 30%;
 
     /* Muted */
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 15% 50%;
+    --muted: 270 15% 96%;
+    --muted-foreground: 270 10% 45%;
 
-    /* Accent - Warm Teal */
-    --accent: 175 60% 45%;
+    /* Accent - Soft Violet */
+    --accent: 280 45% 55%;
     --accent-foreground: 0 0% 100%;
 
     /* Success - Healthy Green */
     --success: 145 65% 42%;
     --success-foreground: 0 0% 100%;
-    --success-light: 145 65% 95%;
+    --success-light: 145 60% 94%;
 
-    /* Warning - Attention Orange */
+    /* Warning - Attention Amber */
     --warning: 35 95% 55%;
     --warning-foreground: 0 0% 100%;
-    --warning-light: 35 95% 95%;
+    --warning-light: 35 90% 94%;
 
     /* Destructive - Alert Red */
-    --destructive: 0 75% 55%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 25% 90%;
-    --input: 210 25% 90%;
-    --ring: 210 85% 45%;
+    --border: 270 15% 90%;
+    --input: 270 15% 90%;
+    --ring: 270 58% 62%;
 
     --radius: 1rem;
 
     /* Custom KECA Variables */
-    --keca-gradient: linear-gradient(135deg, hsl(210, 85%, 45%) 0%, hsl(195, 75%, 50%) 100%);
-    --keca-gradient-soft: linear-gradient(180deg, hsl(210, 50%, 98%) 0%, hsl(210, 40%, 95%) 100%);
-    --keca-shadow: 0 4px 20px -4px hsl(210 85% 45% / 0.2);
-    --keca-shadow-lg: 0 10px 40px -10px hsl(210 85% 45% / 0.3);
-    --keca-glow: 0 0 30px hsl(210 85% 45% / 0.15);
+    --keca-gradient: linear-gradient(135deg, hsl(270, 58%, 62%) 0%, hsl(290, 50%, 60%) 100%);
+    --keca-gradient-soft: linear-gradient(180deg, hsl(270, 30%, 98%) 0%, hsl(270, 25%, 95%) 100%);
+    --keca-shadow: 0 4px 20px -4px hsl(270 58% 62% / 0.25);
+    --keca-shadow-lg: 0 10px 40px -10px hsl(270 58% 62% / 0.35);
+    --keca-glow: 0 0 30px hsl(270 58% 62% / 0.2);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-primary: 270 58% 62%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 270 20% 95%;
+    --sidebar-accent-foreground: 270 20% 15%;
+    --sidebar-border: 270 15% 90%;
+    --sidebar-ring: 270 58% 62%;
   }
 
   .dark {
-    --background: 215 30% 8%;
-    --foreground: 210 40% 98%;
+    --background: 270 25% 7%;
+    --foreground: 270 30% 95%;
 
-    --card: 215 30% 12%;
-    --card-foreground: 210 40% 98%;
+    --card: 270 25% 11%;
+    --card-foreground: 270 30% 95%;
 
-    --popover: 215 30% 12%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 270 25% 11%;
+    --popover-foreground: 270 30% 95%;
 
-    --primary: 210 85% 55%;
+    --primary: 270 58% 65%;
     --primary-foreground: 0 0% 100%;
-    --primary-light: 210 85% 20%;
-    --primary-dark: 210 85% 65%;
+    --primary-light: 270 40% 18%;
+    --primary-dark: 270 58% 72%;
 
-    --secondary: 215 25% 18%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 270 20% 16%;
+    --secondary-foreground: 270 30% 95%;
 
-    --muted: 215 25% 18%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 270 20% 16%;
+    --muted-foreground: 270 15% 60%;
 
-    --accent: 175 60% 50%;
+    --accent: 280 45% 60%;
     --accent-foreground: 0 0% 100%;
 
     --success: 145 65% 50%;
     --success-foreground: 0 0% 100%;
-    --success-light: 145 65% 15%;
+    --success-light: 145 60% 14%;
 
     --warning: 35 95% 60%;
     --warning-foreground: 0 0% 100%;
-    --warning-light: 35 95% 15%;
+    --warning-light: 35 90% 14%;
 
-    --destructive: 0 75% 50%;
+    --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 25% 20%;
-    --input: 215 25% 20%;
-    --ring: 210 85% 55%;
+    --border: 270 20% 18%;
+    --input: 270 20% 18%;
+    --ring: 270 58% 65%;
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-background: 270 25% 8%;
+    --sidebar-foreground: 270 30% 95%;
+    --sidebar-primary: 270 58% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 270 20% 14%;
+    --sidebar-accent-foreground: 270 30% 95%;
+    --sidebar-border: 270 20% 16%;
+    --sidebar-ring: 270 58% 65%;
   }
 }
 
@@ -129,6 +129,8 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Plus Jakarta Sans', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -171,12 +173,8 @@
   }
 
   @keyframes pulse-soft {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.7;
-    }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
   }
 
   .animate-float {
@@ -184,12 +182,8 @@
   }
 
   @keyframes float {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
   }
 
   .animate-scale-in {
@@ -197,14 +191,8 @@
   }
 
   @keyframes scale-in {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
   }
 
   .animate-slide-up {
@@ -212,14 +200,8 @@
   }
 
   @keyframes slide-up {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .animate-ripple {
@@ -227,13 +209,12 @@
   }
 
   @keyframes ripple {
-    0% {
-      transform: scale(1);
-      opacity: 0.4;
-    }
-    100% {
-      transform: scale(2);
-      opacity: 0;
-    }
+    0% { transform: scale(1); opacity: 0.4; }
+    100% { transform: scale(2); opacity: 0; }
+  }
+
+  /* Safe area padding for mobile notches */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
