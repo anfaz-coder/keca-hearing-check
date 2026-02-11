@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import KECALogo from "@/components/KECALogo";
 import ProgressIndicator from "@/components/ProgressIndicator";
@@ -12,9 +11,17 @@ interface YearOfBirthProps {
 const YearOfBirth = ({ onContinue, onBack }: YearOfBirthProps) => {
   const [year, setYear] = useState("");
   const [error, setError] = useState("");
+  const hasNavigated = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const currentYear = new Date().getFullYear();
-  const minYear = 1920;
+  const minYear = 1900;
+
+  // Auto-focus input on mount for mobile keyboard
+  useEffect(() => {
+    const timer = setTimeout(() => inputRef.current?.focus(), 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const validateYear = (value: string): boolean => {
     const yearNum = parseInt(value, 10);
@@ -24,29 +31,24 @@ const YearOfBirth = ({ onContinue, onBack }: YearOfBirthProps) => {
   };
 
   const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (hasNavigated.current) return;
     const value = e.target.value.replace(/\D/g, "").slice(0, 4);
     setYear(value);
-    
+
     if (value.length === 4) {
       if (!validateYear(value)) {
-        setError("Please enter a valid year.");
+        setError("Please enter a valid year between 1900 and " + currentYear + ".");
       } else {
         setError("");
+        hasNavigated.current = true;
+        setTimeout(() => {
+          onContinue(parseInt(value, 10));
+        }, 400);
       }
     } else {
       setError("");
     }
   };
-
-  const handleContinue = () => {
-    if (validateYear(year)) {
-      onContinue(parseInt(year, 10));
-    } else {
-      setError("Please enter a valid year.");
-    }
-  };
-
-  const isValid = year.length === 4 && validateYear(year);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -85,6 +87,7 @@ const YearOfBirth = ({ onContinue, onBack }: YearOfBirthProps) => {
           {/* Input */}
           <div className="mb-4">
             <Input
+              ref={inputRef}
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
@@ -93,36 +96,26 @@ const YearOfBirth = ({ onContinue, onBack }: YearOfBirthProps) => {
               onChange={handleYearChange}
               className={`text-center text-heading-sm font-semibold ${
                 error ? "border-destructive focus-visible:ring-destructive" : ""
-              }`}
+              } ${hasNavigated.current ? "border-primary bg-primary/5" : ""}`}
               maxLength={4}
+              autoComplete="off"
             />
           </div>
 
           {/* Error Message */}
           {error && (
-            <p className="text-body-sm text-destructive text-center mb-4">
-              {error}
-            </p>
+            <div className="flex items-center justify-center gap-2 mb-4" role="alert">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-destructive shrink-0">
+                <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
+              </svg>
+              <p className="text-body-sm text-destructive">{error}</p>
+            </div>
           )}
 
           {/* Helper Text */}
-          <p className="text-body-sm text-muted-foreground text-center mb-8">
+          <p className="text-body-sm text-muted-foreground text-center">
             Age plays an important role in hearing patterns. This helps us interpret your results more accurately.
           </p>
-
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* CTA */}
-          <Button
-            variant="cta"
-            size="xl"
-            className="w-full"
-            disabled={!isValid}
-            onClick={handleContinue}
-          >
-            Continue
-          </Button>
         </div>
       </main>
     </div>
