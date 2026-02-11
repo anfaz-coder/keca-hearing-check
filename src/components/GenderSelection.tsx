@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useRef } from "react";
 import KECALogo from "@/components/KECALogo";
 import ProgressIndicator from "@/components/ProgressIndicator";
 
@@ -10,6 +9,17 @@ interface GenderSelectionProps {
 
 const GenderSelection = ({ onContinue, onBack }: GenderSelectionProps) => {
   const [selectedGender, setSelectedGender] = useState<"female" | "male" | null>(null);
+  const hasNavigated = useRef(false);
+
+  const handleSelect = (gender: "female" | "male") => {
+    if (hasNavigated.current) return;
+    setSelectedGender(gender);
+    hasNavigated.current = true;
+    // Brief delay for visual feedback before advancing
+    setTimeout(() => {
+      onContinue(gender);
+    }, 350);
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -39,8 +49,8 @@ const GenderSelection = ({ onContinue, onBack }: GenderSelectionProps) => {
           </div>
 
           {/* Title */}
-          <div className="text-center mb-8">
-            <h1 className="text-heading-md font-bold text-foreground mb-3">
+          <div className="text-center mb-6">
+            <h1 className="text-heading-md font-bold text-foreground mb-2">
               Welcome to the KECA Online Hearing Test
             </h1>
             <p className="text-body-md text-muted-foreground">
@@ -49,75 +59,46 @@ const GenderSelection = ({ onContinue, onBack }: GenderSelectionProps) => {
           </div>
 
           {/* Question */}
-          <div className="mb-6">
-            <h2 className="text-body-lg font-semibold text-foreground text-center mb-6">
-              Please choose your gender
-            </h2>
-          </div>
+          <h2 className="text-body-lg font-semibold text-foreground text-center mb-6">
+            Please choose your gender
+          </h2>
 
-          {/* Gender Cards */}
+          {/* Gender Cards - large thumb-friendly */}
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <button
-              onClick={() => setSelectedGender("female")}
-              className={`p-6 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center gap-3 ${
-                selectedGender === "female"
-                  ? "border-primary bg-primary/5 shadow-keca"
-                  : "border-border bg-card hover:border-primary/50 hover:bg-secondary/50"
-              }`}
-              aria-pressed={selectedGender === "female"}
-            >
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl ${
-                selectedGender === "female" ? "bg-primary/10" : "bg-secondary"
-              }`}>
-                ♀
-              </div>
-              <span className={`text-body-lg font-semibold ${
-                selectedGender === "female" ? "text-primary" : "text-foreground"
-              }`}>
-                Female
-              </span>
-            </button>
-
-            <button
-              onClick={() => setSelectedGender("male")}
-              className={`p-6 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center gap-3 ${
-                selectedGender === "male"
-                  ? "border-primary bg-primary/5 shadow-keca"
-                  : "border-border bg-card hover:border-primary/50 hover:bg-secondary/50"
-              }`}
-              aria-pressed={selectedGender === "male"}
-            >
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl ${
-                selectedGender === "male" ? "bg-primary/10" : "bg-secondary"
-              }`}>
-                ♂
-              </div>
-              <span className={`text-body-lg font-semibold ${
-                selectedGender === "male" ? "text-primary" : "text-foreground"
-              }`}>
-                Male
-              </span>
-            </button>
+            {([
+              { value: "female" as const, symbol: "♀", label: "Female" },
+              { value: "male" as const, symbol: "♂", label: "Male" },
+            ]).map(({ value, symbol, label }) => (
+              <button
+                key={value}
+                onClick={() => handleSelect(value)}
+                disabled={hasNavigated.current}
+                className={`p-6 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center gap-3 min-h-[120px] ${
+                  selectedGender === value
+                    ? "border-primary bg-primary/5 shadow-keca scale-[1.03]"
+                    : "border-border bg-card hover:border-primary/50 hover:bg-secondary/50 active:scale-[0.97]"
+                }`}
+                aria-pressed={selectedGender === value}
+                aria-label={`Select ${label}`}
+              >
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center text-3xl transition-colors ${
+                  selectedGender === value ? "bg-primary/10" : "bg-secondary"
+                }`}>
+                  {symbol}
+                </div>
+                <span className={`text-body-lg font-semibold transition-colors ${
+                  selectedGender === value ? "text-primary" : "text-foreground"
+                }`}>
+                  {label}
+                </span>
+              </button>
+            ))}
           </div>
 
           {/* Helper Text */}
-          <p className="text-body-sm text-muted-foreground text-center mb-8">
+          <p className="text-body-sm text-muted-foreground text-center">
             This information helps fine-tune the hearing test calibration.
           </p>
-
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* CTA */}
-          <Button
-            variant="cta"
-            size="xl"
-            className="w-full"
-            disabled={!selectedGender}
-            onClick={() => selectedGender && onContinue(selectedGender)}
-          >
-            Continue
-          </Button>
         </div>
       </main>
     </div>

@@ -9,49 +9,62 @@ interface HeadphoneCheckProps {
 
 const HeadphoneCheck = ({ onContinue, onBack }: HeadphoneCheckProps) => {
   return (
-    <div className="min-h-screen keca-gradient-soft">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="container flex items-center justify-center py-6">
-        <KECALogo size="md" />
+      <header className="p-4 border-b border-border/50">
+        <div className="max-w-md mx-auto flex items-center justify-between">
+          <button
+            onClick={onBack}
+            className="p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Go back"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+          </button>
+          <KECALogo size="sm" />
+          <div className="w-10" />
+        </div>
       </header>
 
-      <main className="container pb-12">
-        <div className="mx-auto max-w-md">
-          {/* Icon */}
-          <div className="mb-8 flex justify-center">
-            <div className="animate-pulse-soft rounded-full bg-card p-8 shadow-elevated">
-              <Headphones className="h-20 w-20 text-primary" />
+      {/* Scrollable Content */}
+      <main className="flex-1 flex flex-col overflow-y-auto px-4 pt-6 pb-28">
+        <div className="mx-auto max-w-md w-full">
+          {/* Icon - compact */}
+          <div className="mb-6 flex justify-center">
+            <div className="rounded-full bg-primary/10 p-5">
+              <Headphones className="h-10 w-10 text-primary" />
             </div>
           </div>
 
           {/* Title */}
-          <h1 className="mb-4 text-center text-heading text-foreground">
+          <h1 className="mb-2 text-center text-xl font-bold text-foreground">
             Use Headphones for Best Results
           </h1>
 
           {/* Description */}
-          <p className="mb-8 text-center text-body-lg text-muted-foreground">
-            For accurate hearing test results, please wear headphones in a quiet environment.
+          <p className="mb-6 text-center text-body text-muted-foreground">
+            For accurate results, please wear headphones in a quiet environment.
           </p>
 
-          {/* Tips Card */}
-          <div className="mb-8 rounded-2xl bg-card p-6 shadow-soft">
-            <h2 className="mb-4 flex items-center gap-2 text-subheading text-foreground">
-              <Volume2 className="h-5 w-5 text-primary" />
+          {/* Tips Card - compact */}
+          <div className="mb-4 rounded-2xl bg-card border border-border/50 p-4">
+            <h2 className="mb-3 flex items-center gap-2 text-body-lg font-semibold text-foreground">
+              <Volume2 className="h-4 w-4 text-primary" />
               Quick Tips
             </h2>
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               {[
                 "Use over-ear or in-ear headphones",
                 "Find a quiet room without distractions",
                 "Ensure headphones are properly connected",
-                "Set your device volume to 50-70%",
+                "Set your device volume to 50–70%",
               ].map((tip, index) => (
                 <li
                   key={index}
-                  className="flex items-start gap-3 text-body text-muted-foreground"
+                  className="flex items-start gap-2.5 text-body-sm text-muted-foreground"
                 >
-                  <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-light text-body-sm font-semibold text-primary">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
                     {index + 1}
                   </span>
                   {tip}
@@ -60,25 +73,27 @@ const HeadphoneCheck = ({ onContinue, onBack }: HeadphoneCheckProps) => {
             </ul>
           </div>
 
-          {/* Warning */}
-          <div className="mb-8 flex items-start gap-3 rounded-xl bg-warning-light p-4">
-            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+          {/* Warning - compact */}
+          <div className="flex items-start gap-2.5 rounded-xl bg-destructive/5 border border-destructive/20 p-3">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
             <p className="text-body-sm text-foreground">
-              Taking this test without headphones may affect the accuracy of your results.
+              Taking this test without headphones may affect result accuracy.
             </p>
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-col gap-3">
-            <Button variant="cta" size="lg" onClick={onContinue} className="w-full">
-              I Have My Headphones Ready
-            </Button>
-            <Button variant="ghost" onClick={onBack} className="w-full">
-              Go Back
-            </Button>
           </div>
         </div>
       </main>
+
+      {/* Sticky Bottom CTA */}
+      <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border/50 px-4 py-4 pb-safe-bottom">
+        <div className="mx-auto max-w-md flex flex-col gap-2">
+          <Button variant="cta" size="lg" onClick={onContinue} className="w-full h-14 text-base font-semibold">
+            I'm Using Headphones
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onBack} className="w-full text-muted-foreground">
+            Go Back
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
