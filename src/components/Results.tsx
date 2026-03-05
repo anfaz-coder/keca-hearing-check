@@ -393,14 +393,14 @@ const Results = ({ results, leadData, userProfile, onRestart }: ResultsProps) =>
               Frequencies Tested
             </h3>
             <div className="grid grid-cols-4 gap-2 text-center">
-              {["250 Hz", "500 Hz", "1 kHz", "2 kHz", "3 kHz", "4 kHz", "6 kHz", "8 kHz"].map((freq, idx) => (
+              {["500 Hz", "1 kHz", "2 kHz", "4 kHz"].map((freq) => (
                 <div key={freq} className="rounded-lg bg-secondary/50 p-2">
                   <div className="text-body-sm font-medium text-foreground">{freq}</div>
                 </div>
               ))}
             </div>
             <p className="mt-3 text-center text-body-sm text-muted-foreground">
-              Tested at multiple decibel levels (5-40 dB)
+              4 key frequencies tested at multiple decibel levels
             </p>
           </div>
 
