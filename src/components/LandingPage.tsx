@@ -73,8 +73,8 @@ const LandingPage = ({ onStartTest }: LandingPageProps) => {
               },
               {
                 icon: Ear,
-                title: "Comprehensive",
-                description: "Tests all frequency ranges",
+                title: "4 Key Frequencies",
+                description: "Tests essential hearing range",
               },
             ].map((feature, index) => (
               <div
