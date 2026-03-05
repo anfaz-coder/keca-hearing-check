@@ -7,10 +7,6 @@ const TrustBadges = () => {
       label: "Audiologist Inspired",
     },
     {
-      icon: Users,
-      label: "10,000+ Users",
-    },
-    {
       icon: Lock,
       label: "100% Confidential",
     },
