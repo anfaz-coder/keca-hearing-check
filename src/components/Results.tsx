@@ -26,7 +26,7 @@ interface ResultsProps {
 type HearingLevel = "normal" | "mild" | "moderate" | "severe";
 
 // Standard audiometric frequency labels
-const frequencyLabels = ["250", "500", "1K", "2K", "3K", "4K", "6K", "8K"];
+const frequencyLabels = ["500", "1K", "2K", "4K"];
 
 const Results = ({ results, leadData, userProfile, onRestart }: ResultsProps) => {
   const currentYear = new Date().getFullYear();
