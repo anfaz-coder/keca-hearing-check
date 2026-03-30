@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import KECALogo from "./KECALogo";
-import { FileText, Shield, Phone, Mail } from "lucide-react";
+import { FileText, Shield, Phone, Mail, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface LeadCaptureProps {
   onSubmit: (data: LeadData) => void;
@@ -20,6 +22,7 @@ const LeadCapture = ({ onSubmit }: LeadCaptureProps) => {
   const [email, setEmail] = useState("");
   const [whatsappConsent, setWhatsappConsent] = useState(false);
   const [errors, setErrors] = useState<{ mobile?: string; email?: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = () => {
     const newErrors: { mobile?: string; email?: string } = {};
@@ -42,14 +45,36 @@ const LeadCapture = ({ onSubmit }: LeadCaptureProps) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      onSubmit({
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    try {
+      const leadPayload = {
         mobile: mobile.replace(/\D/g, ""),
         email: email.trim(),
+        whatsapp_consent: whatsappConsent,
+      };
+
+      const { error } = await supabase.from("leads").insert(leadPayload);
+
+      if (error) {
+        console.error("Failed to save lead:", error);
+        toast({ title: "Something went wrong", description: "Please try again.", variant: "destructive" });
+        return;
+      }
+
+      onSubmit({
+        mobile: leadPayload.mobile,
+        email: leadPayload.email,
         whatsappConsent,
       });
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      toast({ title: "Something went wrong", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -136,8 +161,8 @@ const LeadCapture = ({ onSubmit }: LeadCaptureProps) => {
             </div>
 
             {/* Submit Button */}
-            <Button variant="cta" size="xl" type="submit" className="w-full">
-              View My KECA Hearing Report
+            <Button variant="cta" size="xl" type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Saving...</> : "View My KECA Hearing Report"}
             </Button>
           </form>
 
