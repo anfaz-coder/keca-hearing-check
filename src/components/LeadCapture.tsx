@@ -161,8 +161,8 @@ const LeadCapture = ({ onSubmit }: LeadCaptureProps) => {
             </div>
 
             {/* Submit Button */}
-            <Button variant="cta" size="xl" type="submit" className="w-full">
-              View My KECA Hearing Report
+            <Button variant="cta" size="xl" type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Saving...</> : "View My KECA Hearing Report"}
             </Button>
           </form>
 
