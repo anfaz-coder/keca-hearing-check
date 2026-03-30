@@ -22,6 +22,7 @@ const LeadCapture = ({ onSubmit }: LeadCaptureProps) => {
   const [email, setEmail] = useState("");
   const [whatsappConsent, setWhatsappConsent] = useState(false);
   const [errors, setErrors] = useState<{ mobile?: string; email?: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = () => {
     const newErrors: { mobile?: string; email?: string } = {};
