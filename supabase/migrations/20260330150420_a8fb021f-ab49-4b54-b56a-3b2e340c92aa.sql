@@ -1,0 +1,1 @@
+CREATE POLICY "Allow anon select for admin" ON public.leads FOR SELECT TO anon USING (true);
