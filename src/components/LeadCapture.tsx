@@ -45,14 +45,36 @@ const LeadCapture = ({ onSubmit }: LeadCaptureProps) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      onSubmit({
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    try {
+      const leadPayload = {
         mobile: mobile.replace(/\D/g, ""),
         email: email.trim(),
+        whatsapp_consent: whatsappConsent,
+      };
+
+      const { error } = await supabase.from("leads").insert(leadPayload);
+
+      if (error) {
+        console.error("Failed to save lead:", error);
+        toast({ title: "Something went wrong", description: "Please try again.", variant: "destructive" });
+        return;
+      }
+
+      onSubmit({
+        mobile: leadPayload.mobile,
+        email: leadPayload.email,
         whatsappConsent,
       });
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      toast({ title: "Something went wrong", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
